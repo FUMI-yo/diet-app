@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>間食カロリー管理 - 究極安定版 v10</title>
+    <title>間食カロリー管理 - 不死鳥のv11</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        /* すべての要素のサイズ計算を枠線の内側に限定する（はみ出し防止の基本） */
+        /* すべての要素のサイズ計算を枠線の内側に限定する */
         * { box-sizing: border-box; }
         
         body { 
@@ -14,26 +14,27 @@
             padding: 10px; margin: 0; 
         }
         
-        /* 白い枠を画面の中央に配置し、中身がはみ出たら強制的に隠す（overflow: hidden） */
         .container { 
             background-color: #fff; padding: 20px; border-radius: 10px; 
             box-shadow: 0 4px 8px rgba(0,0,0,0.1); width: 100%; max-width: 600px; 
-            margin: 0 auto; overflow: hidden;
+            margin: 0 auto;
         }
         
         h2 { text-align: center; color: #2c3e50; margin-top: 0; }
         h3 { color: #16a085; font-size: 1.1em; border-bottom: 2px solid #1abc9c; padding-bottom: 5px; margin-top: 25px; }
         
-        /* ⬇︎ スマホでは絶対に崩れない「ブロック積み上げ方式」を採用 ⬇︎ */
         .flex-row { display: block; width: 100%; }
         .input-group { display: block; width: 100%; margin-bottom: 15px; }
         
         label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 0.9em; }
         
-        /* 入力欄の勝手な余白を消去（margin: 0）し、幅を100%に固定 */
+        /* ⬇︎ スマホの頑固な初期デザインを強制解除（-webkit-appearance: none;） ⬇︎ */
         input, select { 
+            -webkit-appearance: none; /* スマホ特有の装飾を消す */
+            appearance: none;
             display: block; width: 100%; max-width: 100%; margin: 0; padding: 10px; 
             border: 1px solid #ccc; border-radius: 5px; font-size: 16px; background-color: #fff;
+            min-width: 0; /* 強制的に縮むことを許可する */
         }
         
         button { 
@@ -42,11 +43,17 @@
         }
         button:hover { background-color: #2ecc71; }
         
-        /* ⬇︎ 画面が広い時（PC用）だけ、横並びの魔法をかける ⬇︎ */
+        /* ⬇︎ 画面が広い時（PC用）は横並び ⬇︎ */
         @media (min-width: 600px) {
             .flex-row { display: flex; flex-direction: row; gap: 10px; align-items: flex-end; }
             .flex-row .input-group { flex: 1; margin-bottom: 0; }
             .flex-row button { width: auto; min-width: 80px; margin-top: 0; }
+        }
+
+        /* ⬇︎ スマホの画面が極端に狭い時、白い枠の余白を削ってボタンの場所を確保する ⬇︎ */
+        @media (max-width: 400px) {
+            .container { padding: 15px 10px; } /* 左右の余白を減らす */
+            input, select { padding: 8px; font-size: 14px; } /* 文字と隙間を少しだけ小さくする */
         }
         
         .plan-box { background-color: #e8f8f5; padding: 15px; border-radius: 5px; border-left: 5px solid #1abc9c; margin-bottom: 20px; }
@@ -67,7 +74,6 @@
         .btn-export:hover { background-color: #e67e22; }
         .btn-danger { background-color: #95a5a6; font-size: 12px; margin-top: 40px; }
         
-        /* グラフエリアのはみ出し防止 */
         .chart-wrapper { width: 100%; max-width: 100%; overflow: hidden; margin-top: 15px; }
     </style>
 </head>
