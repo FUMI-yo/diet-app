@@ -3,57 +3,69 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>間食カロリー管理 - v7ベース修正版</title>
+    <title>間食カロリー管理 - はみ出し解決版 v9</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body { font-family: sans-serif; background-color: #f4f7f6; color: #333; padding: 20px; display: flex; justify-content: center; }
-        .container { background-color: #fff; padding: 30px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); width: 100%; max-width: 600px; box-sizing: border-box; }
+        /* 魔法のバリア：すべての要素の内側でサイズ計算させる */
+        * { box-sizing: border-box; max-width: 100%; }
+        
+        /* 画面の横揺れを絶対に許さない設定 */
+        body { 
+            font-family: sans-serif; background-color: #f4f7f6; color: #333; 
+            padding: 10px; margin: 0; display: flex; justify-content: center; 
+            overflow-x: hidden; 
+        }
+        
+        .container { 
+            background-color: #fff; padding: 20px; border-radius: 10px; 
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1); width: 100%; max-width: 600px; 
+        }
+        
         h2 { text-align: center; color: #2c3e50; margin-top: 0; }
         h3 { color: #16a085; font-size: 1.1em; border-bottom: 2px solid #1abc9c; padding-bottom: 5px; margin-top: 25px; }
-        .input-group { margin-bottom: 15px; }
+        
+        .input-group { width: 100%; }
         label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 0.9em; }
-        input, select { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; font-size: 16px; }
+        
+        /* 入力欄（カレンダー含む）を枠内に強制収容 */
+        input, select { 
+            width: 100%; padding: 10px; border: 1px solid #ccc; 
+            border-radius: 5px; font-size: 16px; background-color: #fff;
+        }
         
         .plan-box { background-color: #e8f8f5; padding: 15px; border-radius: 5px; border-left: 5px solid #1abc9c; margin-bottom: 20px; }
         .stat-box { background-color: #fcf3cf; padding: 15px; border-radius: 5px; border-left: 5px solid #f1c40f; margin-bottom: 15px; font-size: 0.9em; line-height: 1.5; }
         .alert-text { color: #e74c3c; font-weight: bold; margin-top: 5px; display: block; }
         
-        button { width: 100%; padding: 10px; background-color: #27ae60; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 15px; font-weight: bold; margin-top: 5px; }
+        button { width: 100%; padding: 12px; background-color: #27ae60; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; font-weight: bold; }
         button:hover { background-color: #2ecc71; }
         
-        .preset-item { display: inline-flex; align-items: center; background: #3498db; color: white; border-radius: 20px; padding: 5px 12px; margin: 4px; font-size: 0.85em; }
+        .preset-area { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+        .preset-item { display: inline-flex; align-items: center; background: #3498db; color: white; border-radius: 20px; padding: 6px 14px; font-size: 0.9em; }
         .preset-name { cursor: pointer; margin-right: 8px; }
-        .preset-del { cursor: pointer; background: rgba(0,0,0,0.2); border-radius: 50%; width: 18px; height: 18px; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; }
+        .preset-del { cursor: pointer; background: rgba(0,0,0,0.2); border-radius: 50%; width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; }
         .preset-del:hover { background: #e74c3c; }
 
         .result { margin-top: 20px; text-align: center; }
         progress { width: 100%; height: 25px; margin-top: 10px; }
         .remaining-text { font-size: 1.5em; font-weight: bold; color: #e74c3c; margin-top: 5px;}
-        .flex-row { display: flex; gap: 10px; align-items: flex-end; }
         
-        /* ★ここが今回の修正ポイントです。 min-width: 0; を追加して日付のはみ出しを強制的に防ぎます */
-        .flex-row .input-group { flex: 1; margin-bottom: 0; min-width: 0; } 
+        /* ⬇︎ 基本設定（スマホ用）：全部縦並びにする！ ⬇︎ */
+        .flex-row { display: flex; flex-direction: column; gap: 0; width: 100%; }
+        .flex-row .input-group { margin-bottom: 12px; }
+        .flex-row button { margin-top: 5px; }
+
+        /* ⬇︎ 画面が広い時（PC用）：横に並べてあげる ⬇︎ */
+        @media (min-width: 600px) {
+            .flex-row { flex-direction: row; gap: 10px; align-items: flex-end; }
+            .flex-row .input-group { flex: 1; margin-bottom: 15px; }
+            .flex-row button { width: 80px; margin-bottom: 15px; margin-top: 0; }
+        }
         
         .btn-export { background-color: #f39c12; margin-top: 20px; }
         .btn-export:hover { background-color: #e67e22; }
         .btn-danger { background-color: #95a5a6; font-size: 12px; margin-top: 40px; }
-
-        @media (max-width: 600px) {
-            body { padding: 10px; }
-            .container { padding: 15px; } 
-            .flex-row {
-                flex-direction: column; 
-                align-items: stretch;
-                gap: 0;
-            }
-            .flex-row .input-group {
-                margin-bottom: 15px;
-            }
-            .flex-row button {
-                width: 100% !important;
-                margin-top: 5px !important;
-            }
-        }
+        .chart-wrapper { width: 100%; overflow: hidden; margin-top: 15px; }
     </style>
 </head>
 <body>
@@ -76,9 +88,9 @@
     <div class="flex-row">
         <div class="input-group"><label>名前</label><input type="text" id="pName" placeholder="チョコ"></div>
         <div class="input-group"><label>kcal</label><input type="number" id="pCal" placeholder="50"></div>
-        <button onclick="addPreset()" style="width: auto; margin-top: 0;">登録</button>
+        <button onclick="addPreset()">登録</button>
     </div>
-    <div id="presetList" style="margin-top:10px;"></div>
+    <div id="presetList" class="preset-area"></div>
 
     <h3>🍽️ 今日の記録</h3>
     <div class="flex-row">
@@ -112,7 +124,9 @@
         <div class="input-group"><label>表示終了</label><input type="date" id="chartEndDate" onchange="drawChart()"></div>
     </div>
     
-    <canvas id="calorieChart" style="margin-top:15px;"></canvas>
+    <div class="chart-wrapper">
+        <canvas id="calorieChart"></canvas>
+    </div>
     
     <button onclick="exportCSV()" class="btn-export">📥 記録をCSVでダウンロード</button>
     <button onclick="clearAllData()" class="btn-danger">全リセット</button>
@@ -323,7 +337,7 @@
                         { type: 'bar', label: '日別摂取kcal', data, backgroundColor: '#3498db', borderRadius: 4 }
                     ]
                 },
-                options: { scales: { y: { beginAtZero: true } } }
+                options: { maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
             });
 
         } else if (type === 'pie') {
@@ -339,7 +353,8 @@
                 data: {
                     labels: Object.keys(counts),
                     datasets: [{ data: Object.values(counts), backgroundColor: ['#e74c3c', '#f1c40f', '#2ecc71', '#9b59b6', '#34495e', '#e67e22'] }]
-                }
+                },
+                options: { maintainAspectRatio: false }
             });
 
         } else if (type === 'weekday') {
@@ -360,7 +375,7 @@
                     labels: weekNames,
                     datasets: [{ label: '曜日別 平均摂取kcal', data: weekAvgs, backgroundColor: '#9b59b6', borderRadius: 4 }]
                 },
-                options: { scales: { y: { beginAtZero: true } } }
+                options: { maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
             });
 
         } else if (type === 'histogram') {
@@ -385,7 +400,7 @@
                     labels: binLabels,
                     datasets: [{ label: '出現日数 (頻度)', data: bins, backgroundColor: '#2ecc71' }]
                 },
-                options: { scales: { x: { title: { display: true, text: '摂取カロリー (kcal)' }}, y: { beginAtZero: true, ticks: { stepSize: 1 }, title: { display: true, text: '日数' } } } }
+                options: { maintainAspectRatio: false, scales: { x: { title: { display: true, text: '摂取カロリー (kcal)' }}, y: { beginAtZero: true, ticks: { stepSize: 1 }, title: { display: true, text: '日数' } } } }
             });
         }
         
