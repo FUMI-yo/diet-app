@@ -3,19 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>間食カロリー管理 - はみ出し防止版 v8</title>
+    <title>間食カロリー管理 - スマホ対応版 v7</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        /* 魔法のバリア：すべての要素のはみ出しを根本から防ぐ */
-        * { box-sizing: border-box; }
-        
-        body { font-family: sans-serif; background-color: #f4f7f6; color: #333; padding: 20px; display: flex; justify-content: center; margin: 0; overflow-x: hidden; }
-        .container { background-color: #fff; padding: 30px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); width: 100%; max-width: 600px; }
+        body { font-family: sans-serif; background-color: #f4f7f6; color: #333; padding: 20px; display: flex; justify-content: center; }
+        .container { background-color: #fff; padding: 30px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); width: 100%; max-width: 600px; box-sizing: border-box; }
         h2 { text-align: center; color: #2c3e50; margin-top: 0; }
         h3 { color: #16a085; font-size: 1.1em; border-bottom: 2px solid #1abc9c; padding-bottom: 5px; margin-top: 25px; }
-        .input-group { margin-bottom: 15px; width: 100%; }
+        .input-group { margin-bottom: 15px; }
         label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 0.9em; }
-        input, select { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 16px; }
+        input, select { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; font-size: 16px; /* スマホの自動ズーム防止 */ }
         
         .plan-box { background-color: #e8f8f5; padding: 15px; border-radius: 5px; border-left: 5px solid #1abc9c; margin-bottom: 20px; }
         .stat-box { background-color: #fcf3cf; padding: 15px; border-radius: 5px; border-left: 5px solid #f1c40f; margin-bottom: 15px; font-size: 0.9em; line-height: 1.5; }
@@ -24,9 +21,7 @@
         button { width: 100%; padding: 10px; background-color: #27ae60; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 15px; font-weight: bold; margin-top: 5px; }
         button:hover { background-color: #2ecc71; }
         
-        /* おやつボタンが横にあふれないように、自動で折り返す設定 */
-        .preset-area { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
-        .preset-item { display: inline-flex; align-items: center; background: #3498db; color: white; border-radius: 20px; padding: 5px 12px; font-size: 0.85em; }
+        .preset-item { display: inline-flex; align-items: center; background: #3498db; color: white; border-radius: 20px; padding: 5px 12px; margin: 4px; font-size: 0.85em; }
         .preset-name { cursor: pointer; margin-right: 8px; }
         .preset-del { cursor: pointer; background: rgba(0,0,0,0.2); border-radius: 50%; width: 18px; height: 18px; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; }
         .preset-del:hover { background: #e74c3c; }
@@ -34,27 +29,29 @@
         .result { margin-top: 20px; text-align: center; }
         progress { width: 100%; height: 25px; margin-top: 10px; }
         .remaining-text { font-size: 1.5em; font-weight: bold; color: #e74c3c; margin-top: 5px;}
-        .flex-row { display: flex; gap: 10px; align-items: flex-end; width: 100%; }
+        .flex-row { display: flex; gap: 10px; align-items: flex-end; }
         .flex-row .input-group { flex: 1; margin-bottom: 0; }
         
         .btn-export { background-color: #f39c12; margin-top: 20px; }
         .btn-export:hover { background-color: #e67e22; }
         .btn-danger { background-color: #95a5a6; font-size: 12px; margin-top: 40px; }
 
-        /* グラフを枠内に閉じ込める設定 */
-        .chart-wrapper { position: relative; width: 100%; overflow: hidden; margin-top: 15px; }
-
-        /* スマホ用レイアウト（少し広めの768px以下で発動するように強化） */
-        @media (max-width: 768px) {
+        /* ⬇︎ スマホ用のレイアウト変更（画面幅600px以下で自動的に発動します） ⬇︎ */
+        @media (max-width: 600px) {
             body { padding: 10px; }
-            .container { padding: 15px; } 
+            .container { padding: 15px; } /* スマホの時は余白を減らして画面を広く使う */
             .flex-row {
-                flex-direction: column; 
+                flex-direction: column; /* 横並びを解除して縦並びにする */
                 align-items: stretch;
                 gap: 0;
             }
-            .flex-row .input-group { margin-bottom: 15px; }
-            .flex-row button { margin-top: 5px !important; }
+            .flex-row .input-group {
+                margin-bottom: 15px;
+            }
+            .flex-row button {
+                width: 100% !important;
+                margin-top: 5px !important;
+            }
         }
     </style>
 </head>
@@ -78,9 +75,9 @@
     <div class="flex-row">
         <div class="input-group"><label>名前</label><input type="text" id="pName" placeholder="チョコ"></div>
         <div class="input-group"><label>kcal</label><input type="number" id="pCal" placeholder="50"></div>
-        <button onclick="addPreset()" style="margin-top: 0;">登録</button>
+        <button onclick="addPreset()" style="width: auto; margin-top: 0;">登録</button>
     </div>
-    <div id="presetList" class="preset-area"></div>
+    <div id="presetList" style="margin-top:10px;"></div>
 
     <h3>🍽️ 今日の記録</h3>
     <div class="flex-row">
@@ -114,9 +111,7 @@
         <div class="input-group"><label>表示終了</label><input type="date" id="chartEndDate" onchange="drawChart()"></div>
     </div>
     
-    <div class="chart-wrapper">
-        <canvas id="calorieChart"></canvas>
-    </div>
+    <canvas id="calorieChart" style="margin-top:15px;"></canvas>
     
     <button onclick="exportCSV()" class="btn-export">📥 記録をCSVでダウンロード</button>
     <button onclick="clearAllData()" class="btn-danger">全リセット</button>
@@ -126,6 +121,7 @@
     let appData = { history: [], presets: [] };
     let myChart = null;
 
+    // --- データの保存・読み込み・初期化 ---
     function saveToLocal() {
         appData.settings = {
             start: document.getElementById('startDate').value,
@@ -163,6 +159,7 @@
         document.getElementById('startDate').value = today;
         document.getElementById('endDate').value = nextStr;
         
+        // グラフは過去30日分を初期表示
         const lastMonth = new Date();
         lastMonth.setDate(lastMonth.getDate() - 29);
         document.getElementById('chartStartDate').value = lastMonth.toISOString().split('T')[0];
@@ -170,6 +167,7 @@
         document.getElementById('recordDate').value = today;
     }
 
+    // --- プリセット機能 ---
     function addPreset() {
         const name = document.getElementById('pName').value;
         const cal = parseInt(document.getElementById('pCal').value);
@@ -204,6 +202,7 @@
         addRecord();
     }
 
+    // --- メインロジック ---
     function saveAndRefresh() {
         saveToLocal();
         updateDisplay();
@@ -248,6 +247,7 @@
         drawChart();
     }
 
+    // --- 統計計算ユーティリティ ---
     function calculateStats(dataArray) {
         if (dataArray.length === 0) return { mean: 0, median: 0, stdDev: 0 };
         const sum = dataArray.reduce((a, b) => a + b, 0);
@@ -263,6 +263,7 @@
         return { mean, median, stdDev };
     }
 
+    // --- グラフ描画と分析ロジック ---
     function drawChart() {
         const ctx = document.getElementById('calorieChart').getContext('2d');
         const sDate = new Date(document.getElementById('chartStartDate').value);
@@ -271,6 +272,7 @@
 
         if (myChart) myChart.destroy();
 
+        // グラフ期間内の日別合計カロリーを計算
         let dailySums = {};
         let curr = new Date(sDate);
         let validDaysCount = 0;
@@ -285,11 +287,13 @@
         const dailyValuesArray = Object.values(dailySums);
         const stats = calculateStats(dailyValuesArray);
 
+        // --- 統計サマリーと異常値アラートの表示 ---
         let statHtml = `<strong>表示期間の統計</strong><br>
                         平均: <strong>${Math.round(stats.mean)}</strong> kcal / 日<br>
                         中央値: <strong>${Math.round(stats.median)}</strong> kcal / 日<br>
                         標準偏差 (ばらつき): <strong>${Math.round(stats.stdDev)}</strong>`;
         
+        // 平均 + 2σ を異常値（上位2.5%）の基準とする
         const threshold = stats.mean + (2 * stats.stdDev);
         let alertDays = [];
         for (let d in dailySums) {
@@ -303,14 +307,17 @@
         }
         document.getElementById('statSummary').innerHTML = dailyValuesArray.length > 0 ? statHtml : "データがありません";
 
+        // --- グラフの描画分岐 ---
         if (type === 'bar') {
+            // 1. 日別推移 ＆ 7日移動平均線
             const labels = Object.keys(dailySums);
             const data = Object.values(dailySums);
             
+            // 移動平均の計算
             let maData = [];
             for (let i = 0; i < data.length; i++) {
                 if (i < 6) {
-                    maData.push(null); 
+                    maData.push(null); // 最初の6日間は移動平均を出さない
                 } else {
                     let sum = 0;
                     for (let j = 0; j < 7; j++) sum += data[i - j];
@@ -327,10 +334,11 @@
                         { type: 'bar', label: '日別摂取kcal', data, backgroundColor: '#3498db', borderRadius: 4 }
                     ]
                 },
-                options: { maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
+                options: { scales: { y: { beginAtZero: true } } }
             });
 
         } else if (type === 'pie') {
+            // 2. 円グラフ (おやつ内訳)
             let counts = {};
             appData.history.forEach(r => {
                 const rd = new Date(r.date);
@@ -343,11 +351,11 @@
                 data: {
                     labels: Object.keys(counts),
                     datasets: [{ data: Object.values(counts), backgroundColor: ['#e74c3c', '#f1c40f', '#2ecc71', '#9b59b6', '#34495e', '#e67e22'] }]
-                },
-                options: { maintainAspectRatio: false }
+                }
             });
 
         } else if (type === 'weekday') {
+            // 3. 曜日別平均
             const weekNames = ['日', '月', '火', '水', '木', '金', '土'];
             let weekSums = [0, 0, 0, 0, 0, 0, 0];
             let weekCounts = [0, 0, 0, 0, 0, 0, 0];
@@ -365,12 +373,13 @@
                     labels: weekNames,
                     datasets: [{ label: '曜日別 平均摂取kcal', data: weekAvgs, backgroundColor: '#9b59b6', borderRadius: 4 }]
                 },
-                options: { maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
+                options: { scales: { y: { beginAtZero: true } } }
             });
 
         } else if (type === 'histogram') {
+            // 4. ヒストグラム (度数分布)
             const maxCal = Math.max(...dailyValuesArray, 1000);
-            const binSize = 200; 
+            const binSize = 200; // 200kcal刻み
             const numBins = Math.ceil(maxCal / binSize) + 1;
             let bins = new Array(numBins).fill(0);
             
@@ -390,7 +399,7 @@
                     labels: binLabels,
                     datasets: [{ label: '出現日数 (頻度)', data: bins, backgroundColor: '#2ecc71' }]
                 },
-                options: { maintainAspectRatio: false, scales: { x: { title: { display: true, text: '摂取カロリー (kcal)' }}, y: { beginAtZero: true, ticks: { stepSize: 1 }, title: { display: true, text: '日数' } } } }
+                options: { scales: { x: { title: { display: true, text: '摂取カロリー (kcal)' }}, y: { beginAtZero: true, ticks: { stepSize: 1 }, title: { display: true, text: '日数' } } } }
             });
         }
         
