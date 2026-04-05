@@ -3,15 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>間食カロリー管理 - 不死鳥のv11</title>
+    <title>間食カロリー管理 - アプリUI版 v12</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        /* すべての要素のサイズ計算を枠線の内側に限定する */
         * { box-sizing: border-box; }
         
+        /* 下部のメニューバーに被らないように、下部に80pxの余白を設ける */
         body { 
             font-family: sans-serif; background-color: #f4f7f6; color: #333; 
-            padding: 10px; margin: 0; 
+            padding: 10px 10px 80px 10px; margin: 0; 
         }
         
         .container { 
@@ -25,16 +25,13 @@
         
         .flex-row { display: block; width: 100%; }
         .input-group { display: block; width: 100%; margin-bottom: 15px; }
-        
         label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 0.9em; }
         
-        /* ⬇︎ スマホの頑固な初期デザインを強制解除（-webkit-appearance: none;） ⬇︎ */
         input, select { 
-            -webkit-appearance: none; /* スマホ特有の装飾を消す */
-            appearance: none;
+            -webkit-appearance: none; appearance: none;
             display: block; width: 100%; max-width: 100%; margin: 0; padding: 10px; 
             border: 1px solid #ccc; border-radius: 5px; font-size: 16px; background-color: #fff;
-            min-width: 0; /* 強制的に縮むことを許可する */
+            min-width: 0; 
         }
         
         button { 
@@ -43,17 +40,15 @@
         }
         button:hover { background-color: #2ecc71; }
         
-        /* ⬇︎ 画面が広い時（PC用）は横並び ⬇︎ */
         @media (min-width: 600px) {
             .flex-row { display: flex; flex-direction: row; gap: 10px; align-items: flex-end; }
             .flex-row .input-group { flex: 1; margin-bottom: 0; }
             .flex-row button { width: auto; min-width: 80px; margin-top: 0; }
         }
 
-        /* ⬇︎ スマホの画面が極端に狭い時、白い枠の余白を削ってボタンの場所を確保する ⬇︎ */
         @media (max-width: 400px) {
-            .container { padding: 15px 10px; } /* 左右の余白を減らす */
-            input, select { padding: 8px; font-size: 14px; } /* 文字と隙間を少しだけ小さくする */
+            .container { padding: 15px 10px; } 
+            input, select { padding: 8px; font-size: 14px; } 
         }
         
         .plan-box { background-color: #e8f8f5; padding: 15px; border-radius: 5px; border-left: 5px solid #1abc9c; margin-bottom: 20px; }
@@ -64,17 +59,39 @@
         .preset-item { display: inline-flex; align-items: center; background: #3498db; color: white; border-radius: 20px; padding: 6px 14px; font-size: 0.9em; }
         .preset-name { cursor: pointer; margin-right: 8px; }
         .preset-del { cursor: pointer; background: rgba(0,0,0,0.2); border-radius: 50%; width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; }
-        .preset-del:hover { background: #e74c3c; }
-
+        
         .result { margin-top: 20px; text-align: center; }
         progress { width: 100%; height: 25px; margin-top: 10px; }
         .remaining-text { font-size: 1.5em; font-weight: bold; color: #e74c3c; margin-top: 5px;}
         
         .btn-export { background-color: #f39c12; margin-top: 20px; }
-        .btn-export:hover { background-color: #e67e22; }
         .btn-danger { background-color: #95a5a6; font-size: 12px; margin-top: 40px; }
         
         .chart-wrapper { width: 100%; max-width: 100%; overflow: hidden; margin-top: 15px; }
+
+        /* ⬇︎ タブ切り替えのためのCSS ⬇︎ */
+        .tab-content { display: none; } /* 基本は見えないようにする */
+        .tab-content.active { 
+            display: block; /* .active がついた時だけ表示 */
+            animation: fadeIn 0.3s; /* フワッと表示させるアニメーション */
+        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* ⬇︎ アプリ風の画面下固定メニューバー ⬇︎ */
+        .bottom-nav {
+            position: fixed; bottom: 0; left: 0; width: 100%;
+            background: #fff; box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+            display: flex; z-index: 1000;
+        }
+        .bottom-nav button {
+            flex: 1; background: transparent; color: #95a5a6;
+            border: none; border-radius: 0; padding: 15px 0; margin: 0;
+            font-size: 16px; border-top: 3px solid transparent;
+        }
+        .bottom-nav button.active {
+            color: #27ae60; border-top-color: #27ae60;
+            font-weight: bold; background-color: #f9fbfb;
+        }
     </style>
 </head>
 <body>
@@ -82,68 +99,96 @@
 <div class="container">
     <h2>間食カロリー管理</h2>
 
-    <h3>📝 目標設定</h3>
-    <div class="flex-row">
-        <div class="input-group"><label>開始日</label><input type="date" id="startDate" onchange="saveAndRefresh()"></div>
-        <div class="input-group"><label>終了日</label><input type="date" id="endDate" onchange="saveAndRefresh()"></div>
-    </div>
-    <div class="input-group">
-        <label>目標カロリー (kcal)</label>
-        <input type="number" id="targetCalorie" value="1500" onchange="saveAndRefresh()">
-    </div>
-    <div class="plan-box" id="planDisplay"></div>
+    <div id="tab-record" class="tab-content active">
+        <h3>📝 目標設定</h3>
+        <div class="flex-row">
+            <div class="input-group"><label>開始日</label><input type="date" id="startDate" onchange="saveAndRefresh()"></div>
+            <div class="input-group"><label>終了日</label><input type="date" id="endDate" onchange="saveAndRefresh()"></div>
+        </div>
+        <div class="input-group">
+            <label>目標カロリー (kcal)</label>
+            <input type="number" id="targetCalorie" value="1500" onchange="saveAndRefresh()">
+        </div>
+        <div class="plan-box" id="planDisplay"></div>
 
-    <h3>🍪 おやつプリセット</h3>
-    <div class="flex-row">
-        <div class="input-group"><label>名前</label><input type="text" id="pName" placeholder="チョコ"></div>
-        <div class="input-group"><label>kcal</label><input type="number" id="pCal" placeholder="50"></div>
-        <button onclick="addPreset()">登録</button>
-    </div>
-    <div id="presetList" class="preset-area"></div>
+        <h3>🍪 おやつプリセット</h3>
+        <div class="flex-row">
+            <div class="input-group"><label>名前</label><input type="text" id="pName" placeholder="チョコ"></div>
+            <div class="input-group"><label>kcal</label><input type="number" id="pCal" placeholder="50"></div>
+            <button onclick="addPreset()">登録</button>
+        </div>
+        <div id="presetList" class="preset-area"></div>
 
-    <h3>🍽️ 今日の記録</h3>
-    <div class="flex-row">
-        <div class="input-group"><label>記録日</label><input type="date" id="recordDate"></div>
-        <div class="input-group"><label>名前（任意）</label><input type="text" id="eatenName" placeholder="おやつ名"></div>
-        <div class="input-group"><label>kcal</label><input type="number" id="eatenCalorie" placeholder="0"></div>
-    </div>
-    <button onclick="addRecord()">記録する</button>
+        <h3>🍽️ 今日の記録</h3>
+        <div class="flex-row">
+            <div class="input-group"><label>記録日</label><input type="date" id="recordDate"></div>
+            <div class="input-group"><label>名前（任意）</label><input type="text" id="eatenName" placeholder="おやつ名"></div>
+            <div class="input-group"><label>kcal</label><input type="number" id="eatenCalorie" placeholder="0"></div>
+        </div>
+        <button onclick="addRecord()">記録する</button>
 
-    <div class="result">
-        <p>期間合計: <span id="totalEaten">0</span> kcal / <progress id="calorieBar"></progress></p>
-        <div class="remaining-text">残り <span id="remainingCalorie">0</span> kcal</div>
-    </div>
-
-    <h3>📊 統計・分析（最大30日間）</h3>
-    
-    <div id="statSummary" class="stat-box">データがありません</div>
-
-    <div class="flex-row">
-        <div class="input-group"><label>分析モード</label>
-            <select id="chartType" onchange="drawChart()">
-                <option value="bar">📈 日別推移 ＆ 7日移動平均</option>
-                <option value="pie">🍕 おやつ内訳 (円グラフ)</option>
-                <option value="weekday">📅 曜日別 平均カロリー</option>
-                <option value="histogram">📊 カロリー度数分布</option>
-            </select>
+        <div class="result">
+            <p>期間合計: <span id="totalEaten">0</span> kcal / <progress id="calorieBar"></progress></p>
+            <div class="remaining-text">残り <span id="remainingCalorie">0</span> kcal</div>
         </div>
     </div>
-    <div class="flex-row">
-        <div class="input-group"><label>表示開始</label><input type="date" id="chartStartDate" onchange="drawChart()"></div>
-        <div class="input-group"><label>表示終了</label><input type="date" id="chartEndDate" onchange="drawChart()"></div>
+
+    <div id="tab-stats" class="tab-content">
+        <h3>📊 統計・分析（最大30日間）</h3>
+        
+        <div id="statSummary" class="stat-box">データがありません</div>
+
+        <div class="flex-row">
+            <div class="input-group"><label>分析モード</label>
+                <select id="chartType" onchange="drawChart()">
+                    <option value="bar">📈 日別推移 ＆ 7日移動平均</option>
+                    <option value="pie">🍕 おやつ内訳 (円グラフ)</option>
+                    <option value="weekday">📅 曜日別 平均カロリー</option>
+                    <option value="histogram">📊 カロリー度数分布</option>
+                </select>
+            </div>
+        </div>
+        <div class="flex-row">
+            <div class="input-group"><label>表示開始</label><input type="date" id="chartStartDate" onchange="drawChart()"></div>
+            <div class="input-group"><label>表示終了</label><input type="date" id="chartEndDate" onchange="drawChart()"></div>
+        </div>
+        
+        <div class="chart-wrapper">
+            <canvas id="calorieChart"></canvas>
+        </div>
+        
+        <button onclick="exportCSV()" class="btn-export">📥 記録をCSVでダウンロード</button>
+        <button onclick="clearAllData()" class="btn-danger">全リセット</button>
     </div>
-    
-    <div class="chart-wrapper">
-        <canvas id="calorieChart"></canvas>
-    </div>
-    
-    <button onclick="exportCSV()" class="btn-export">📥 記録をCSVでダウンロード</button>
-    <button onclick="clearAllData()" class="btn-danger">全リセット</button>
 </div>
+
+<nav class="bottom-nav">
+    <button id="nav-btn-record" class="active" onclick="switchTab('record')">📝 入力・記録</button>
+    <button id="nav-btn-stats" onclick="switchTab('stats')">📊 統計・分析</button>
+</nav>
 
 <script>
     let appData = { history: [], presets: [] };
     let myChart = null;
+
+    // --- タブ切り替え機能 ---
+    function switchTab(tabName) {
+        // 全てのタブとボタンの「active」を外す
+        document.getElementById('tab-record').classList.remove('active');
+        document.getElementById('tab-stats').classList.remove('active');
+        document.getElementById('nav-btn-record').classList.remove('active');
+        document.getElementById('nav-btn-stats').classList.remove('active');
+
+        // 選ばれたタブとボタンに「active」をつける
+        if (tabName === 'record') {
+            document.getElementById('tab-record').classList.add('active');
+            document.getElementById('nav-btn-record').classList.add('active');
+        } else if (tabName === 'stats') {
+            document.getElementById('tab-stats').classList.add('active');
+            document.getElementById('nav-btn-stats').classList.add('active');
+            drawChart(); // 統計タブが開かれた時にグラフを描画し直す（表示崩れ防止）
+        }
+    }
 
     function saveToLocal() {
         appData.settings = {
