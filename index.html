@@ -3,42 +3,55 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>間食カロリー管理 - はみ出し解決版 v9</title>
+    <title>間食カロリー管理 - 究極安定版 v10</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        /* 魔法のバリア：すべての要素の内側でサイズ計算させる */
-        * { box-sizing: border-box; max-width: 100%; }
+        /* すべての要素のサイズ計算を枠線の内側に限定する（はみ出し防止の基本） */
+        * { box-sizing: border-box; }
         
-        /* 画面の横揺れを絶対に許さない設定 */
         body { 
             font-family: sans-serif; background-color: #f4f7f6; color: #333; 
-            padding: 10px; margin: 0; display: flex; justify-content: center; 
-            overflow-x: hidden; 
+            padding: 10px; margin: 0; 
         }
         
+        /* 白い枠を画面の中央に配置し、中身がはみ出たら強制的に隠す（overflow: hidden） */
         .container { 
             background-color: #fff; padding: 20px; border-radius: 10px; 
             box-shadow: 0 4px 8px rgba(0,0,0,0.1); width: 100%; max-width: 600px; 
+            margin: 0 auto; overflow: hidden;
         }
         
         h2 { text-align: center; color: #2c3e50; margin-top: 0; }
         h3 { color: #16a085; font-size: 1.1em; border-bottom: 2px solid #1abc9c; padding-bottom: 5px; margin-top: 25px; }
         
-        .input-group { width: 100%; }
+        /* ⬇︎ スマホでは絶対に崩れない「ブロック積み上げ方式」を採用 ⬇︎ */
+        .flex-row { display: block; width: 100%; }
+        .input-group { display: block; width: 100%; margin-bottom: 15px; }
+        
         label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 0.9em; }
         
-        /* 入力欄（カレンダー含む）を枠内に強制収容 */
+        /* 入力欄の勝手な余白を消去（margin: 0）し、幅を100%に固定 */
         input, select { 
-            width: 100%; padding: 10px; border: 1px solid #ccc; 
-            border-radius: 5px; font-size: 16px; background-color: #fff;
+            display: block; width: 100%; max-width: 100%; margin: 0; padding: 10px; 
+            border: 1px solid #ccc; border-radius: 5px; font-size: 16px; background-color: #fff;
+        }
+        
+        button { 
+            display: block; width: 100%; margin: 0; padding: 12px; background-color: #27ae60; 
+            color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; font-weight: bold; 
+        }
+        button:hover { background-color: #2ecc71; }
+        
+        /* ⬇︎ 画面が広い時（PC用）だけ、横並びの魔法をかける ⬇︎ */
+        @media (min-width: 600px) {
+            .flex-row { display: flex; flex-direction: row; gap: 10px; align-items: flex-end; }
+            .flex-row .input-group { flex: 1; margin-bottom: 0; }
+            .flex-row button { width: auto; min-width: 80px; margin-top: 0; }
         }
         
         .plan-box { background-color: #e8f8f5; padding: 15px; border-radius: 5px; border-left: 5px solid #1abc9c; margin-bottom: 20px; }
         .stat-box { background-color: #fcf3cf; padding: 15px; border-radius: 5px; border-left: 5px solid #f1c40f; margin-bottom: 15px; font-size: 0.9em; line-height: 1.5; }
         .alert-text { color: #e74c3c; font-weight: bold; margin-top: 5px; display: block; }
-        
-        button { width: 100%; padding: 12px; background-color: #27ae60; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; font-weight: bold; }
-        button:hover { background-color: #2ecc71; }
         
         .preset-area { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
         .preset-item { display: inline-flex; align-items: center; background: #3498db; color: white; border-radius: 20px; padding: 6px 14px; font-size: 0.9em; }
@@ -50,22 +63,12 @@
         progress { width: 100%; height: 25px; margin-top: 10px; }
         .remaining-text { font-size: 1.5em; font-weight: bold; color: #e74c3c; margin-top: 5px;}
         
-        /* ⬇︎ 基本設定（スマホ用）：全部縦並びにする！ ⬇︎ */
-        .flex-row { display: flex; flex-direction: column; gap: 0; width: 100%; }
-        .flex-row .input-group { margin-bottom: 12px; }
-        .flex-row button { margin-top: 5px; }
-
-        /* ⬇︎ 画面が広い時（PC用）：横に並べてあげる ⬇︎ */
-        @media (min-width: 600px) {
-            .flex-row { flex-direction: row; gap: 10px; align-items: flex-end; }
-            .flex-row .input-group { flex: 1; margin-bottom: 15px; }
-            .flex-row button { width: 80px; margin-bottom: 15px; margin-top: 0; }
-        }
-        
         .btn-export { background-color: #f39c12; margin-top: 20px; }
         .btn-export:hover { background-color: #e67e22; }
         .btn-danger { background-color: #95a5a6; font-size: 12px; margin-top: 40px; }
-        .chart-wrapper { width: 100%; overflow: hidden; margin-top: 15px; }
+        
+        /* グラフエリアのはみ出し防止 */
+        .chart-wrapper { width: 100%; max-width: 100%; overflow: hidden; margin-top: 15px; }
     </style>
 </head>
 <body>
@@ -78,7 +81,7 @@
         <div class="input-group"><label>開始日</label><input type="date" id="startDate" onchange="saveAndRefresh()"></div>
         <div class="input-group"><label>終了日</label><input type="date" id="endDate" onchange="saveAndRefresh()"></div>
     </div>
-    <div class="input-group" style="margin-top:10px;">
+    <div class="input-group">
         <label>目標カロリー (kcal)</label>
         <input type="number" id="targetCalorie" value="1500" onchange="saveAndRefresh()">
     </div>
@@ -109,7 +112,7 @@
     
     <div id="statSummary" class="stat-box">データがありません</div>
 
-    <div class="flex-row" style="margin-bottom:10px;">
+    <div class="flex-row">
         <div class="input-group"><label>分析モード</label>
             <select id="chartType" onchange="drawChart()">
                 <option value="bar">📈 日別推移 ＆ 7日移動平均</option>
